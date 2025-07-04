@@ -5,4 +5,10 @@ if [ "${1}" == "./bin/rails" ] && [ "${2}" == "server" ]; then
   ./bin/rails db:prepare
 fi
 
+# If running rspec tests should prepare the database too
+if [ "$1" == "bundle" ] && [ "$2" == "exec" ] && [ "$3" == "rspec" ]; then
+  echo "Preparando banco de teste..."
+  ./bin/rails db:prepare
+fi
+
 exec "${@}"
