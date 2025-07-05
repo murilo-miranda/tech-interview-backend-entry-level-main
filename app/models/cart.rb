@@ -4,5 +4,12 @@ class Cart < ApplicationRecord
   
   validates_numericality_of :total_price, greater_than_or_equal_to: 0
 
+  def total_price
+    cart_items.includes(:product).sum do |cart_item|
+      cart_item.product.price * cart_item.quantity
+    end
+  end
+
   # TODO: lógica para marcar o carrinho como abandonado e remover se abandonado
+
 end
