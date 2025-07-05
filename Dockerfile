@@ -49,9 +49,10 @@ COPY --from=build /rails /rails
 # Run and own only the runtime files as a non-root user for security
 RUN useradd rails --create-home --shell /bin/bash && \
     chown -R rails:rails db log storage tmp && \
-		chown rails:rails /rails/bin/docker-entrypoint && \
-		chmod u+x /rails/bin/docker-entrypoint && \
-		chmod go-rx /rails/bin/docker-entrypoint
+    chown rails:rails /rails/bin/docker-entrypoint && \
+    chmod u+x /rails/bin/docker-entrypoint && \
+    chmod go-rx /rails/bin/docker-entrypoint && \
+    chown -R rails:rails /usr/local/bundle
 
 USER rails:rails
 
