@@ -27,6 +27,16 @@ RSpec.describe CartItem, type: :model do
 				expect(cart_item.errors[:quantity]).to include("must be greater than 0")
 			end
 		end
+
+		it 'validates product id uniqueness' do
+			cart_item = CartItem.new(cart: cart, product: product, quantity: 1)
+			cart_item.save
+
+			cart_item2 = CartItem.new(cart: cart, product: product, quantity: 1)
+
+			expect(cart_item2.valid?).to be_falsey
+			expect(cart_item2.errors[:product_id]).to include("already exists in cart")
+		end
 	end
 
 	describe 'associations' do
