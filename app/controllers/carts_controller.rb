@@ -2,27 +2,10 @@ class CartsController < ApplicationController
   include ActionController::Cookies
 
   def create
-    cart_id = session[:cart_id]
-
-    if cart_id.nil?
-      begin
-        ActiveRecord::Base.transaction do
-          @cart = Cart.create!(total_price: 0)
-          @cart_item = CartItem.create!(cart_params)
-        end
-      rescue ActiveRecord::RecordInvalid => e
-        render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
-        return
-      end
-
-      session[:cart_id] = @cart.id
-    else
-      @cart = Cart.find(cart_id)
-      begin
-        @cart_item = CartItem.create!(cart_params)
-      rescue ActiveRecord::RecordInvalid => e
-        render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
-      end
+    begin
+      @cart = CartManagerService.new(session: session, cart_params: cart_params).call
+    rescue ActiveRecord::RecordInvalid => e
+      return render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
     end
 
     render json: json_response, status: :ok
