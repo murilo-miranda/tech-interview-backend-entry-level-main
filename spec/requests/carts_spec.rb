@@ -238,4 +238,59 @@ RSpec.describe "/carts", type: :request do
       end
     end
   end
+
+  describe "GET /cart" do
+    let(:headers) { { 'ACCEPT' => 'application/json' } }
+    let(:product) { Product.create(name: "Test Product", price: 10.0) }
+    let(:quantity) { 1 }
+    let(:params) {
+      {
+        "product_id": product.id,
+        "quantity": quantity
+      }
+    }
+
+    context 'when session is not present' do
+      let(:expected_response) {
+        {
+          "errors": "Session not found, please create a new cart"
+        }
+      }
+
+      it 'returns error info in json format with status code 422' do
+        get '/cart', headers: headers
+
+        parsed_body = JSON.parse(response.body, symbolize_names: true)
+        expect(parsed_body).to include(expected_response)
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+
+    context 'when session is present' do
+      let(:expected_response) {
+        {
+          "id": Cart.last.id,
+          "products": [{
+            "id": product.id,
+            "name": product.name,
+            "quantity": quantity,
+            "unit_price": product.price.to_f,
+            "total_price": (product.price * 1).to_f
+          }],
+          "total_price": (product.price * 1).to_f
+        }
+      }
+      
+      it 'returns the cart info with status code 200' do
+        post '/cart', params: params
+        valid_session_cookie = response.headers['Set-Cookie']
+
+        get '/cart', headers: headers.merge('Cookie': valid_session_cookie)
+
+        parsed_body = JSON.parse(response.body, symbolize_names: true)
+        expect(parsed_body).to eq(expected_response)
+        expect(response).to have_http_status(:ok)
+      end
+    end
+  end
 end
