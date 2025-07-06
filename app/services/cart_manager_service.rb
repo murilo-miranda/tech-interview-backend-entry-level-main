@@ -24,6 +24,19 @@ class CartManagerService
 		Cart.find(@session[:cart_id])
 	end
 
+	def self.update(session:, cart_params:)
+		new(session: session, cart_params: cart_params).update
+	end
+
+	def update
+		ActiveRecord::Base.transaction do
+			cart = Cart.find(@session[:cart_id])
+			cart_item = CartItem.find_by!(cart: cart, product_id: @cart_params[:product_id])
+			cart_item.update!(quantity: @cart_params[:quantity])
+			cart
+		end
+	end
+
 	private
 
 	def load_or_create_cart
