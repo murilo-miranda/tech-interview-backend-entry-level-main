@@ -10,7 +10,7 @@ RSpec.describe CartsController, type: :routing do
       expect(post: '/cart').to route_to('carts#create')
     end
 
-    xit 'routes to #add_item via POST' do
+    it 'routes to #add_item via POST' do
       expect(post: '/cart/add_item').to route_to('carts#add_item')
     end
   end
