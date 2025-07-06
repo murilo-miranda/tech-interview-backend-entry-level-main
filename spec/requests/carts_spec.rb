@@ -78,6 +78,20 @@ RSpec.describe "/carts", type: :request do
           expect(parsed_body).to eq(expected_response)
           expect(response).to have_http_status(:ok)
         end
+
+        context 'and is trying to add the same product' do
+          it 'returns error info in json format with status code 422' do
+            post '/cart', params: params
+            valid_session_cookie = response.headers['Set-Cookie']
+            cart_created_from_prev_session = Cart.last
+
+            post '/cart', params: params, headers: headers.merge('Cookie': valid_session_cookie)
+
+            parsed_body = JSON.parse(response.body, symbolize_names: true)
+            expect(parsed_body).to eq({ "errors": ["Product already exists in cart"] })
+            expect(response).to have_http_status(:unprocessable_entity)
+          end
+        end
       end
 
       context 'when the cart does not exist' do

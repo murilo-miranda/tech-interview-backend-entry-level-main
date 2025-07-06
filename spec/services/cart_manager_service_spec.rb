@@ -6,7 +6,7 @@ RSpec.describe CartManagerService, type: :model do
 			let!(:previous_cart) { Cart.create(total_price: 0.0) }
 			let(:product) { Product.create(name: "Test Product", price: 10.0) }
 			let(:product2) { Product.create(name: "Test Product2", price: 7.0) }
-			let!(:cart_item0) { CartItem.create(cart: previous_cart, product: product, quantity: quantity) }
+			let!(:cart_item) { CartItem.create(cart: previous_cart, product: product, quantity: quantity) }
 			let(:quantity) { 1 }
 			let(:cart_params) {
 				{
@@ -29,7 +29,22 @@ RSpec.describe CartManagerService, type: :model do
 				expect { 
 					described_class.call(session: session, cart_params: cart_params)
 				}.not_to change(Cart, :count)
-			end	
+			end
+
+			context 'product already in cart' do
+				let(:cart_params) {
+					{
+						"product_id": product.id,
+						"quantity": quantity
+					}
+				}
+				
+				it 'raise an error' do
+					expect { 
+						described_class.call(session: session, cart_params: cart_params) 
+					}.to raise_error(ActiveRecord::RecordInvalid)
+				end
+			end
 
 			context 'invalid cart params' do
 				let(:cart_params) {
