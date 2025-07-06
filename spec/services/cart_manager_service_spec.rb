@@ -32,14 +32,15 @@ RSpec.describe CartManagerService, type: :model do
 			end	
 
 			context 'invalid cart params' do
+				let(:cart_params) {
+					{
+						"product_id": product.id,
+						"quantity": quantity
+					}
+				}
+
 				context 'quantity zero' do
 					let(:quantity) { 0 }
-					let(:cart_params) {
-						{
-							"product_id": product.id,
-							"quantity": quantity
-						}
-					}
 
 					it 'does not register a cart item' do
 						expect { 
@@ -50,12 +51,6 @@ RSpec.describe CartManagerService, type: :model do
 
 				context 'negative quantity' do
 					let(:quantity) { -1 }
-					let(:cart_params) {
-						{
-							"product_id": product.id,
-							"quantity": quantity
-						}
-					}
 
 					it 'does not register a cart item' do
 						expect { 
@@ -66,12 +61,6 @@ RSpec.describe CartManagerService, type: :model do
 
 				context 'quantity not a number' do
 					let(:quantity) { "a" }
-					let(:cart_params) {
-						{
-							"product_id": product.id,
-							"quantity": quantity
-						}
-					}
 
 					it 'does not register a cart item' do
 						expect { 

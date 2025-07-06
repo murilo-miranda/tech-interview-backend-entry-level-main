@@ -4,23 +4,16 @@ RSpec.describe "/carts", type: :request do
   describe "POST /cart" do
     let(:headers) { { 'ACCEPT' => 'application/json' } }
     let(:product) { Product.create(name: "Test Product", price: 10.0) }
+    let(:quantity) { 1 }
     let(:params) {
       {
         "product_id": product.id,
-        "quantity": 1
+        "quantity": quantity
       }
     }
+
     describe 'with valid parameters' do
       context 'when cookie session was not present' do
-        let(:product) { Product.create(name: "Test Product", price: 10.0) }
-        let(:quantity) { 1 }
-        let(:params) {
-          {
-            "product_id": product.id,
-            "quantity": quantity
-          }
-        }
-
         it 'creates a cookie session' do
           post '/cart', params: params, headers: headers
 
@@ -30,15 +23,7 @@ RSpec.describe "/carts", type: :request do
       end
 
       context 'when cookie session was present' do
-        let!(:product) { Product.create(name: "Test Product", price: 10.0) }
         let!(:product2) { Product.create(name: "Test Product 2", price: 7.0) }
-        let(:quantity) { 1 }
-        let(:params) {
-          {
-            "product_id": product.id,
-            "quantity": quantity
-          }
-        }
         let(:second_params) {
           {
             "product_id": product2.id,
@@ -96,15 +81,7 @@ RSpec.describe "/carts", type: :request do
       end
 
       context 'when the cart does not exist' do
-        let(:product) { Product.create(name: "Test Product", price: 10.0) }
         let(:cart_item) { CartItem.create(cart: Cart.last, product: product, quantity: quantity) }
-        let(:quantity) { 1 }
-        let(:params) {
-          {
-            "product_id": product.id,
-            "quantity": quantity
-          }
-        }
         let(:expected_response) {
           {
             "id": Cart.last.id,
@@ -138,13 +115,6 @@ RSpec.describe "/carts", type: :request do
     end
 
     describe 'with invalid parameters' do
-      let(:product) { Product.create(name: "Test Product", price: 10.0) }
-      let(:params) {
-        {
-          "product_id": product.id,
-          "quantity": quantity
-        }
-      }
       let(:expected_response) {
         {
           "errors": ["Quantity must be greater than 0"]
@@ -255,7 +225,6 @@ RSpec.describe "/carts", type: :request do
     
   describe "POST /add_items" do
     let(:cart) { Cart.create }
-    let(:product) { Product.create(name: "Test Product", price: 10.0) }
     let!(:cart_item) { CartItem.create(cart: cart, product: product, quantity: 1) }
 
     context 'when the product already is in the cart' do
