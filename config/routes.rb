@@ -8,4 +8,5 @@ Rails.application.routes.draw do
   root "rails/health#show"
 
   post "cart", to: "carts#create"
+  get "cart", to: "carts#show"
 end
