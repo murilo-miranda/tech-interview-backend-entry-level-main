@@ -20,4 +20,9 @@ RSpec.describe Product, type: :model do
       expect(product.errors[:price]).to include("must be greater than or equal to 0")
     end
   end
+
+  describe 'associations' do
+    it { should have_many(:carts).through(:cart_items) }
+    it { should have_many(:cart_items).class_name('CartItem') }
+  end
 end
