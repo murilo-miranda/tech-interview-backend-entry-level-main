@@ -21,13 +21,13 @@ RSpec.describe CartManagerService, type: :model do
 			}
 
 			it 'registers a cart item for cart from previous session' do
-				cart = described_class.new(session: session, cart_params: cart_params).call
+				cart = described_class.call(session: session, cart_params: cart_params)
 				expect(cart.id).to eq(previous_cart.id)
 			end
 
 			it 'do not create a new cart' do
 				expect { 
-					described_class.new(session: session, cart_params: cart_params).call
+					described_class.call(session: session, cart_params: cart_params)
 				}.not_to change(Cart, :count)
 			end	
 
@@ -44,7 +44,7 @@ RSpec.describe CartManagerService, type: :model do
 
 					it 'does not register a cart item' do
 						expect { 
-							described_class.new(session: session, cart_params: cart_params).call 
+							described_class.call(session: session, cart_params: cart_params) 
 						}.to raise_error(ActiveRecord::RecordInvalid)
 					end
 				end
@@ -54,7 +54,7 @@ RSpec.describe CartManagerService, type: :model do
 
 					it 'does not register a cart item' do
 						expect { 
-							described_class.new(session: session, cart_params: cart_params).call 
+							described_class.call(session: session, cart_params: cart_params) 
 						}.to raise_error(ActiveRecord::RecordInvalid)
 					end
 				end
@@ -64,7 +64,7 @@ RSpec.describe CartManagerService, type: :model do
 
 					it 'does not register a cart item' do
 						expect { 
-							described_class.new(session: session, cart_params: cart_params).call 
+							described_class.call(session: session, cart_params: cart_params) 
 						}.to raise_error(ActiveRecord::RecordInvalid)
 					end
 				end
@@ -80,7 +80,7 @@ RSpec.describe CartManagerService, type: :model do
 
 					it 'does not register a cart item' do
 						expect { 
-							described_class.new(session: session, cart_params: cart_params).call 
+							described_class.call(session: session, cart_params: cart_params) 
 						}.to raise_error(ActiveRecord::RecordInvalid)
 					end
 				end
@@ -98,13 +98,30 @@ RSpec.describe CartManagerService, type: :model do
 			}
 
 			it 'creates a new cart and registers a cart item' do
-				expect { described_class.new(session: nil, cart_params: cart_params).call }.to change(Cart, :count).by(1)
-				expect { described_class.new(session: nil, cart_params: cart_params).call }.to change(CartItem, :count).by(1)
+				expect { described_class.call(session: nil, cart_params: cart_params) }.to change(Cart, :count).by(1)
+				expect { described_class.call(session: nil, cart_params: cart_params) }.to change(CartItem, :count).by(1)
 			end
 
 			it 'return a cart' do
-				cart = described_class.new(session: nil, cart_params: cart_params).call
+				cart = described_class.call(session: nil, cart_params: cart_params)
 				expect(cart).to be_a(Cart)
+			end
+		end
+	end
+
+	describe '#find_cart' do
+		let(:cart) { Cart.create }
+		let(:session) { { "cart_id": cart.id } }
+
+		context 'when session is present' do
+			it 'returns a cart' do
+				expect(described_class.find_cart(session: session)).to eq(cart)
+			end
+		end
+
+		context 'when session is not present' do
+			it 'raises an error' do
+				expect { described_class.find_cart(session: nil) }.to raise_error(ActiveRecord::RecordNotFound)
 			end
 		end
 	end
