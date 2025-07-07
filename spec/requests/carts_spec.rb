@@ -240,10 +240,11 @@ RSpec.describe "/carts", type: :request do
   describe "POST /add_item" do
     let(:cart) { Cart.create(total_price: 0.0) }
     let(:product) { Product.create(name: "Test Product", price: 10.0) }
+    let(:product2) { Product.create(name: "Test Product", price: 10.0) }
     let!(:cart_item) { CartItem.create(cart: cart, product: product, quantity: 1) }
 
     context 'when session is present' do
-      context 'when the product already is in the cart' do
+      context 'and the product already is in the cart' do
         let(:expected_response) {
           {
             "id": Cart.last.id,
@@ -285,7 +286,32 @@ RSpec.describe "/carts", type: :request do
         end
       end
 
-      context 'when the product is not in the cart' do
+      context 'and the product is not in the cart' do
+        let(:params) {
+          {
+            "product_id": product2.id,
+            "quantity": 1
+          }
+        }
+        let(:expected_response) {
+          {
+            "errors": "The product does not exist in the cart"
+          }
+        }
+
+        it 'returns error info in json format with status code 422' do
+          post '/cart', params: { product_id: product.id, quantity: 1 }
+          valid_session_cookie = response.headers['Set-Cookie']
+
+          post '/cart/add_item', params: params, headers: { 'Cookie': valid_session_cookie, 'ACCEPT': 'application/json' }
+
+          parsed_body = JSON.parse(response.body, symbolize_names: true)  
+          expect(parsed_body).to include(expected_response)
+          expect(response).to have_http_status(:not_found)
+        end
+      end
+
+      context 'and the product does not exist' do
         let(:params) {
           {
             "product_id": 999_999,
@@ -319,7 +345,7 @@ RSpec.describe "/carts", type: :request do
       }
 
       it 'returns error info in json format with status code 422' do
-        post '/cart/add_item', params: { product_id: product.id, quantity: 1 }, headers: headers
+        post '/cart/add_item', params: { product_id: product.id, quantity: 1 }, as: :json
 
         parsed_body = JSON.parse(response.body, symbolize_names: true)
         expect(parsed_body).to include(expected_response)
@@ -386,6 +412,7 @@ RSpec.describe "/carts", type: :request do
   describe "DELETE /cart/:product_id" do
     let(:cart) { Cart.create(total_price: 0.0) }
     let(:product) { Product.create(name: "Test Product", price: 10.0) }
+    let(:product2) { Product.create(name: "Test Product", price: 10.0) }
     let!(:cart_item) { CartItem.create(cart: cart, product: product, quantity: 1) }
     let(:product_id) { product.id }
 
@@ -420,11 +447,27 @@ RSpec.describe "/carts", type: :request do
         end
       end
 
-      context 'and the product is not in the cart' do
+      context 'and the product does not exist' do
         let(:product_id) { 999_999 }
         let(:expected_response) {
           {
             "errors": "Couldn't find Product with 'id'=999999"
+          }
+        }
+
+        it 'returns error info in json format with status code 422' do
+          subject
+          parsed_body = JSON.parse(response.body, symbolize_names: true)  
+          expect(parsed_body).to include(expected_response)
+          expect(response).to have_http_status(:not_found)
+        end
+      end
+
+      context 'and the product is not in the cart' do
+        let(:product_id) { product2.id }
+        let(:expected_response) {
+          {
+            "errors": "The product does not exist in the cart"
           }
         }
 

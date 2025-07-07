@@ -1,51 +1,26 @@
 class CartsController < ApplicationController
   include ActionController::Cookies
 
-  def create
-    begin
-      @cart = CartManagerService.call(session: session, cart_params: cart_params)
-    rescue ActiveRecord::RecordInvalid => e
-      return render json: { errors: e.record.errors.full_messages }, status: :unprocessable_entity
-    end
+  rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
+  rescue_from ActiveRecord::RecordInvalid, with: :render_record_invalid
 
+  def create
+    @cart = CartManagerService.call(session: session, cart_params: cart_params)
     render json: json_response, status: :ok
   end
 
   def show
-    begin
-      @cart = CartManagerService.find_cart(session: session)
-    rescue ActiveRecord::RecordNotFound => e
-      return render json: { errors: "Session not found, please create a new cart" }, status: :not_found
-    end
-
+    @cart = CartManagerService.find_cart(session: session)
     render json: json_response, status: :ok
   end
 
   def add_item
-    begin
-      @cart = CartManagerService.update(session: session, cart_params: cart_params)
-    rescue ActiveRecord::RecordNotFound => e
-      if e.model == "Cart"
-        return render json: { errors: "Session not found, please create a new cart" }, status: :not_found
-      end
-
-      return render json: { errors: e }, status: :not_found
-    end
-
+    @cart = CartManagerService.update(session: session, cart_params: cart_params)
     render json: json_response, status: :ok
   end
 
   def remove_item
-    begin
-      @cart = CartManagerService.remove_item(session: session, cart_params: cart_params)
-    rescue ActiveRecord::RecordNotFound => e
-      if e.model == "Cart"
-        return render json: { errors: "Session not found, please create a new cart" }, status: :not_found
-      end
-
-      return render json: { errors: e }, status: :not_found
-    end
-
+    @cart = CartManagerService.remove_item(session: session, cart_params: cart_params)
     render json: json_response, status: :ok
   end
 
@@ -57,5 +32,19 @@ class CartsController < ApplicationController
 
   def cart_params
     params.permit(:product_id, :quantity).merge(cart: @cart)
+  end
+
+  def render_not_found(error)
+    if error.model == "Cart"
+      render json: { errors: "Session not found, please create a new cart" }, status: :not_found
+    elsif error.model == "CartItem"
+      render json: { errors: "The product does not exist in the cart" }, status: :not_found
+    else
+      render json: { errors: error }, status: :not_found
+    end
+  end
+
+  def render_record_invalid(error)
+    render json: { errors: error.record.errors.full_messages }, status: :unprocessable_entity
   end
 end
