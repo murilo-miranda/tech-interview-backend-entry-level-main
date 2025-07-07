@@ -42,6 +42,18 @@ class CartManagerService
 		cart
 	end
 
+	def self.remove_item(session:, cart_params:)
+		new(session: session, cart_params: cart_params).remove_item
+	end
+
+	def remove_item
+		cart = Cart.find(@session[:cart_id])
+		product = Product.find(@cart_params[:product_id])
+		cart_item = CartItem.find_by!(cart: cart, product_id: product)
+		cart_item.destroy!
+		cart
+	end
+
 	private
 
 	def load_or_create_cart

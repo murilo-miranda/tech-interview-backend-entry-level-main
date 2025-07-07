@@ -382,4 +382,75 @@ RSpec.describe "/carts", type: :request do
       end
     end
   end
+
+  describe "DELETE /cart/:product_id" do
+    let(:cart) { Cart.create(total_price: 0.0) }
+    let(:product) { Product.create(name: "Test Product", price: 10.0) }
+    let!(:cart_item) { CartItem.create(cart: cart, product: product, quantity: 1) }
+    let(:product_id) { product.id }
+
+    context 'when session is present' do
+      before do
+        post '/cart', params: { product_id: product.id, quantity: 1 }
+        @cookie_session = response.headers['Set-Cookie']
+      end
+
+      subject do
+        delete "/cart/#{product_id}", headers: { 'Cookie': @cookie_session }, as: :json
+      end
+
+      context 'and the product is in the cart' do
+        let(:expected_response) {
+          {
+            "id": Cart.last.id,
+            "products": [],
+            "total_price": 0.0
+          }
+        }
+
+        it 'deletes the item from the cart' do
+          expect { subject }.to change(CartItem, :count).by(-1)
+        end
+
+        it 'returns the updated cart in json format with status code 200' do
+          subject
+          parsed_body = JSON.parse(response.body, symbolize_names: true)
+          expect(parsed_body).to include(expected_response)
+          expect(response).to have_http_status(:ok)
+        end
+      end
+
+      context 'and the product is not in the cart' do
+        let(:product_id) { 999_999 }
+        let(:expected_response) {
+          {
+            "errors": "Couldn't find Product with 'id'=999999"
+          }
+        }
+
+        it 'returns error info in json format with status code 422' do
+          subject
+          parsed_body = JSON.parse(response.body, symbolize_names: true)  
+          expect(parsed_body).to include(expected_response)
+          expect(response).to have_http_status(:not_found)
+        end
+      end
+    end
+
+    context 'when session is not present' do
+      let(:expected_response) {
+        {
+          "errors": "Session not found, please create a new cart"
+        }
+      }
+
+      it 'returns error info in json format with status code 422' do
+        delete "/cart/#{product.id}", as: :json
+
+        parsed_body = JSON.parse(response.body, symbolize_names: true)
+        expect(parsed_body).to include(expected_response)
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+  end
 end

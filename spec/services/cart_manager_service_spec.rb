@@ -227,4 +227,41 @@ RSpec.describe CartManagerService, type: :model do
 			end
 		end
 	end
+
+	describe '#remove_item' do
+		let!(:previous_cart) { Cart.create(total_price: 0.0) }
+		let(:product) { Product.create(name: "Test Product", price: 10.0) }
+		let!(:cart_item) { CartItem.create(cart: previous_cart, product: product, quantity: 1) }
+		let(:cart_params) {{ "product_id": product.id }}
+
+		context 'when session is present' do
+			let(:session) { { "cart_id": previous_cart.id } }
+
+			context 'and cart param is valid' do
+				it 'removes product from cart and updates cart info' do
+					cart = described_class.remove_item(session: session, cart_params: cart_params)
+
+					expect(cart.cart_items.count).to eq(0)
+				end
+
+				context 'but product does not exist' do
+					let(:cart_params) { {"product_id": 999_999} }
+
+					it 'raises an error' do
+						expect {
+							described_class.remove_item(session: session, cart_params: cart_params)
+						}.to raise_error(ActiveRecord::RecordNotFound)
+					end
+				end
+			end
+		end
+
+		context 'when session is not present' do
+			it 'raises an error' do
+				expect { 
+					described_class.remove_item(session: nil, cart_params: cart_params) 
+				}.to raise_error(ActiveRecord::RecordNotFound)
+			end
+		end
+	end
 end
