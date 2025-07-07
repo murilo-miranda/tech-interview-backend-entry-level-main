@@ -10,6 +10,9 @@ class Cart < ApplicationRecord
     end
   end
 
-  # TODO: lógica para marcar o carrinho como abandonado e remover se abandonado
+  enum status: { active: 0, abandoned: 1 }
 
+  def mark_as_abandoned
+    abandoned! if last_interaction_at < 3.hours.ago
+  end
 end
