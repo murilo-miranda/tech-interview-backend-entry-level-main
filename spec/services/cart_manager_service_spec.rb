@@ -140,4 +140,91 @@ RSpec.describe CartManagerService, type: :model do
 			end
 		end
 	end
+
+	describe '#update' do
+		let!(:previous_cart) { Cart.create(total_price: 0.0) }
+		let(:product) { Product.create(name: "Test Product", price: 10.0) }
+		let!(:cart_item) { CartItem.create(cart: previous_cart, product: product, quantity: quantity) }
+		let(:quantity) { 3 }
+		let(:cart_params) {
+			{
+				"product_id": product.id,
+				"quantity": quantity
+			}
+		}
+
+		context 'when session is present' do
+			let(:session) { { "cart_id": previous_cart.id } }
+
+			context 'and cart param is valid' do
+				let(:updating_cart_params) {
+					{
+						"product_id": product.id,
+						"quantity": 2
+					}
+				}
+
+				it 'updates cart info' do
+					cart = described_class.update(session: session, cart_params: updating_cart_params)
+					expect(cart_item.reload.quantity).to eq(5)
+					expect(cart.total_price).to eq(50.0)
+				end
+
+				context 'but product does not exist' do
+					let(:updating_cart_params) {
+						{
+							"product_id": 999_999,
+							"quantity": 2
+						}
+					}
+
+					it 'raises an error' do
+						expect {
+							described_class.update(session: session, cart_params: updating_cart_params)
+						}.to raise_error(ActiveRecord::RecordNotFound)
+					end
+				end
+			end
+
+			context 'and cart param is not valid' do
+				context 'due to negative quantity' do
+					let(:invalid_params) {
+						{
+							"product_id": product.id,
+							"quantity": -1
+						}
+					}
+
+					it 'raises an error' do
+						expect { 
+							described_class.update(session: session, cart_params: invalid_params)
+						}.to raise_error(ActiveRecord::RecordInvalid)
+					end
+				end
+
+				context 'due to zero quantity' do
+					let(:invalid_params) {
+						{
+							"product_id": product.id,
+							"quantity": 0
+						}
+					}
+
+					it 'raises an error' do
+						expect { 
+							described_class.update(session: session, cart_params: invalid_params)
+						}.to raise_error(ActiveRecord::RecordInvalid)
+					end
+				end
+			end
+		end
+
+		context 'when session is not present' do
+			it 'raises an error' do
+				expect { 
+					described_class.update(session: nil, cart_params: cart_params) 
+				}.to raise_error(ActiveRecord::RecordNotFound)
+			end
+		end
+	end
 end
