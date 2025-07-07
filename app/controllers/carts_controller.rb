@@ -21,6 +21,20 @@ class CartsController < ApplicationController
     render json: json_response, status: :ok
   end
 
+  def add_item
+    begin
+      @cart = CartManagerService.update(session: session, cart_params: cart_params)
+    rescue ActiveRecord::RecordNotFound => e
+      if e.model == "Cart"
+        return render json: { errors: "Session not found, please create a new cart" }, status: :not_found
+      end
+
+      return render json: { errors: e }, status: :not_found
+    end
+
+    render json: json_response, status: :ok
+  end
+
   private
   
   def json_response
