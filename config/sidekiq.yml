@@ -11,6 +11,9 @@ tasks: &tasks
   MarkCartAsAbandonedJob:
     cron: "0 */4 * * *"
     queue: default
+  RemoveAbandonedCartJob:
+    cron: "0 0 * * *"
+    queue: default
 :scheduler:
   :schedule:
     <<: *tasks
