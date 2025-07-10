@@ -1,70 +1,27 @@
-class CartManagerService
-	def initialize(session:, cart_params:)
+class CartManagerService	
+	attr_reader :action
+	
+	SERVICE = {
+		show: CartFinderService,
+		create: CartItemRegisterService,
+		add_item: CartItemUpdaterService,
+		remove_item: CartItemDeleterService
+	}
+	def initialize(session:, cart_params:, action:)
 		@session = session || {}
 		@cart_params = cart_params
+		@action = action.to_sym
 	end
 	
-	def self.call(session:, cart_params:)
-		new(session: session, cart_params: cart_params).create_item
+	def self.call(session:, cart_params:, action:)
+		cart_manager = new(session: session, cart_params: cart_params, action: action)
+
+		SERVICE[cart_manager.action].call(**cart_manager.params)
 	end
-
-	def create_item
-		ActiveRecord::Base.transaction do
-			cart = load_or_create_cart
-			CartItem.create!(@cart_params.merge(cart: cart))
-			cart
-		end
-	end
-
-	def self.find_cart(session:)
-		new(session: session, cart_params: nil).find_cart
-	end
-
-	def find_cart()
-		Cart.find(@session[:cart_id])
-	end
-
-	def self.update(session:, cart_params:)
-		new(session: session, cart_params: cart_params).update
-	end
-
-	def update
-		cart = Cart.find(@session[:cart_id])
-		product = Product.find(@cart_params[:product_id])
-		cart_item = CartItem.find_by!(cart: cart, product_id: product)
-
-		ensure_valid_quantity!(cart_item)
-
-		new_quantity = @cart_params[:quantity].to_i + cart_item.quantity
-
-		cart_item.update!(quantity: new_quantity)
-
-		cart
-	end
-
-	def self.remove_item(session:, cart_params:)
-		new(session: session, cart_params: cart_params).remove_item
-	end
-
-	def remove_item
-		cart = Cart.find(@session[:cart_id])
-		product = Product.find(@cart_params[:product_id])
-		cart_item = CartItem.find_by!(cart: cart, product_id: product)
-		cart_item.destroy!
-		cart
-	end
-
-	private
-
-	def load_or_create_cart
-		@session[:cart_id] ||= Cart.create!(total_price: 0.0).id
-		Cart.find(@session[:cart_id])
-	end
-
-	def ensure_valid_quantity!(cart_item)
-		if @cart_params[:quantity].to_i <= 0
-			cart_item.errors.add(:quantity, "must be greater than 0")
-			raise ActiveRecord::RecordInvalid, cart_item
-		end
+	def params
+		{
+			session: @session,
+			cart_params: @cart_params
+		}
 	end
 end

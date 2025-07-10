@@ -4,34 +4,36 @@ class CartsController < ApplicationController
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
   rescue_from ActiveRecord::RecordInvalid, with: :render_record_invalid
 
+  before_action :set_action_name
+
   def create
-    @cart = CartManagerService.call(session: session, cart_params: cart_params)
-    render json: json_response, status: :ok
+    @cart = CartManagerService.call(session: session, cart_params: cart_params, action: @current_action)
+    render_cart_info
   end
 
   def show
-    @cart = CartManagerService.find_cart(session: session)
-    render json: json_response, status: :ok
+    @cart = CartManagerService.call(session: session, cart_params: {}, action: @current_action)
+    render_cart_info
   end
 
   def add_item
-    @cart = CartManagerService.update(session: session, cart_params: cart_params)
-    render json: json_response, status: :ok
+    @cart = CartManagerService.call(session: session, cart_params: cart_params, action: @current_action)
+    render_cart_info
   end
 
   def remove_item
-    @cart = CartManagerService.remove_item(session: session, cart_params: cart_params)
-    render json: json_response, status: :ok
+    @cart = CartManagerService.call(session: session, cart_params: cart_params, action: @current_action)
+    render_cart_info
   end
 
   private
   
-  def json_response
-    CartPresenter.new(@cart).as_json
+  def render_cart_info
+    render json: CartPresenter.new(@cart).as_json, status: :ok
   end
 
   def cart_params
-    params.permit(:product_id, :quantity).merge(cart: @cart)
+    params.permit(:product_id, :quantity)
   end
 
   def render_not_found(error)
@@ -46,5 +48,9 @@ class CartsController < ApplicationController
 
   def render_record_invalid(error)
     render json: { errors: error.record.errors.full_messages }, status: :unprocessable_entity
+  end
+
+  def set_action_name
+    @current_action = action_name
   end
 end
