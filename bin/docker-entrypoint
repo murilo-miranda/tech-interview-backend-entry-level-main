@@ -11,4 +11,7 @@ if [ "$1" == "bundle" ] && [ "$2" == "exec" ] && [ "$3" == "rspec" ]; then
   ./bin/rails db:prepare
 fi
 
+# Solver A server is already running (pid: 1, file: /rails/tmp/pids/server.pid)
+rm -f tmp/pids/server.pid
+
 exec "${@}"
