@@ -4,23 +4,25 @@ class CartsController < ApplicationController
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
   rescue_from ActiveRecord::RecordInvalid, with: :render_record_invalid
 
+  before_action :set_action_name
+
   def create
-    @cart = CartManagerService.call(session: session, cart_params: cart_params)
+    @cart = CartManagerService.call(session: session, cart_params: cart_params, action: @current_action)
     render json: json_response, status: :ok
   end
 
   def show
-    @cart = CartManagerService.find_cart(session: session)
+    @cart = CartManagerService.call(session: session, cart_params: {}, action: @current_action)
     render json: json_response, status: :ok
   end
 
   def add_item
-    @cart = CartManagerService.update(session: session, cart_params: cart_params)
+    @cart = CartManagerService.call(session: session, cart_params: cart_params, action: @current_action)
     render json: json_response, status: :ok
   end
 
   def remove_item
-    @cart = CartManagerService.remove_item(session: session, cart_params: cart_params)
+    @cart = CartManagerService.call(session: session, cart_params: cart_params, action: @current_action)
     render json: json_response, status: :ok
   end
 
@@ -46,5 +48,9 @@ class CartsController < ApplicationController
 
   def render_record_invalid(error)
     render json: { errors: error.record.errors.full_messages }, status: :unprocessable_entity
+  end
+
+  def set_action_name
+    @current_action = action_name
   end
 end
