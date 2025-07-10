@@ -8,32 +8,32 @@ class CartsController < ApplicationController
 
   def create
     @cart = CartManagerService.call(session: session, cart_params: cart_params, action: @current_action)
-    render json: json_response, status: :ok
+    render_cart_info
   end
 
   def show
     @cart = CartManagerService.call(session: session, cart_params: {}, action: @current_action)
-    render json: json_response, status: :ok
+    render_cart_info
   end
 
   def add_item
     @cart = CartManagerService.call(session: session, cart_params: cart_params, action: @current_action)
-    render json: json_response, status: :ok
+    render_cart_info
   end
 
   def remove_item
     @cart = CartManagerService.call(session: session, cart_params: cart_params, action: @current_action)
-    render json: json_response, status: :ok
+    render_cart_info
   end
 
   private
   
-  def json_response
-    CartPresenter.new(@cart).as_json
+  def render_cart_info
+    render json: CartPresenter.new(@cart).as_json, status: :ok
   end
 
   def cart_params
-    params.permit(:product_id, :quantity).merge(cart: @cart)
+    params.permit(:product_id, :quantity)
   end
 
   def render_not_found(error)
